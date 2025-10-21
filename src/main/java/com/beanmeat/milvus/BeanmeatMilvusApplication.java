@@ -30,13 +30,12 @@ public class BeanmeatMilvusApplication {
         return args -> {
             try {
                 log.info("开始初始化Milvus集合...");
-                vectorDataService.initializeCollection();
+                // vectorDataService.initializeCollection();
                 log.info("Milvus集合初始化完成");
                 
                 log.info("==========================================");
                 log.info("Beanmeat Milvus 应用启动成功！");
                 log.info("API文档地址: http://localhost:8080/api/swagger-ui.html");
-                log.info("健康检查地址: http://localhost:8080/api/v1/health");
                 log.info("==========================================");
                 
             } catch (Exception e) {

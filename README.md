@@ -9,10 +9,11 @@ SpringBoot + Milvus向量数据库 + Ollama + Bge-M3向量模型
 ## 技术栈
 
 - **Spring Boot 3.2.0** - 主框架
-- **Milvus 2.3.4** - 向量数据库
+- **Milvus 2.5.2** - 向量数据库（V2客户端）
 - **Swagger/OpenAPI 3** - API文档生成
 - **Maven** - 依赖管理
 - **Java 17** - 开发语言
+- **FastJSON2** - JSON处理
 
 ## 功能特性
 
@@ -24,6 +25,18 @@ SpringBoot + Milvus向量数据库 + Ollama + Bge-M3向量模型
 - ✅ 全局异常处理
 - ✅ 参数验证
 - ✅ 健康检查
+- ✅ 配置化管理
+
+## 数据模型
+
+根据CreateManualCollection的字段结构，数据模型包含：
+
+| 字段名 | 类型 | 说明 |
+|--------|------|------|
+| id | Int64 | 主键ID |
+| description | VarChar(1024) | 描述文本 |
+| segment | Int64 | 段落ID |
+| description_vector | FloatVector(1024) | 描述向量 |
 
 ## 快速开始
 
@@ -31,31 +44,38 @@ SpringBoot + Milvus向量数据库 + Ollama + Bge-M3向量模型
 
 - Java 17+
 - Maven 3.6+
-- Milvus 2.3+
+- Milvus 2.5+
 
-### 2. 启动Milvus
-
-```bash
-# 使用Docker启动Milvus
-docker run -d --name milvus-standalone \
-  -p 19530:19530 \
-  -p 9091:9091 \
-  milvusdb/milvus:latest \
-  milvus run standalone
-```
-
-### 3. 配置应用
+### 2. 配置Milvus连接
 
 修改 `src/main/resources/application.yml` 中的Milvus连接配置：
 
 ```yaml
 milvus:
-  host: localhost
-  port: 19530
-  database: default
+  uri: http://134.175.83.172  # 您的Milvus服务器地址
+  collection:
+    name: beanmeat_test
+    description: Beanmeat向量数据集合
+    consistency-level: STRONG
+    fields:
+      id:
+        data-type: Int64
+        is-primary-key: true
+        max-length: 64
+      description:
+        data-type: VarChar
+        max-length: 1024
+      segment:
+        data-type: Int64
+        max-length: 64
+      description_vector:
+        data-type: FloatVector
+        dimension: 1024
+        index-type: FLAT
+        metric-type: COSINE
 ```
 
-### 4. 运行应用
+### 3. 运行应用
 
 ```bash
 # 编译项目
@@ -65,7 +85,7 @@ mvn clean compile
 mvn spring-boot:run
 ```
 
-### 5. 访问API文档
+### 4. 访问API文档
 
 启动成功后，访问以下地址查看API文档：
 
@@ -103,9 +123,9 @@ mvn spring-boot:run
 curl -X POST http://localhost:8080/api/v1/vectors \
   -H "Content-Type: application/json" \
   -d '{
-    "text": "这是一个示例文本",
-    "metadata": "{\"category\":\"example\"}",
-    "vector": [0.1, 0.2, 0.3, 0.4, 0.5]
+    "description": "这是一个示例描述文本",
+    "segment": 1,
+    "descriptionVector": [0.1, 0.2, 0.3, 0.4, 0.5]
   }'
 ```
 
@@ -117,7 +137,8 @@ curl -X POST http://localhost:8080/api/v1/vectors/search \
   -d '{
     "queryVector": [0.1, 0.2, 0.3, 0.4, 0.5],
     "topK": 10,
-    "threshold": 0.7
+    "threshold": 0.7,
+    "filter": "segment == 1"
   }'
 ```
 
@@ -133,7 +154,7 @@ curl -X GET "http://localhost:8080/api/v1/vectors?page=1&size=10"
 src/main/java/com/beanmeat/milvus/
 ├── BeanmeatMilvusApplication.java    # 应用启动类
 ├── config/                           # 配置类
-│   ├── MilvusConfig.java            # Milvus配置
+│   ├── MilvusConfig.java            # Milvus V2配置
 │   ├── MilvusProperties.java        # Milvus属性
 │   ├── SwaggerConfig.java           # Swagger配置
 │   └── WebConfig.java               # Web配置
@@ -152,7 +173,8 @@ src/main/java/com/beanmeat/milvus/
 ├── exception/                       # 异常处理
 │   └── GlobalExceptionHandler.java # 全局异常处理器
 ├── repository/                      # 数据访问层
-│   └── MilvusRepository.java       # Milvus数据访问
+│   ├── MilvusRepository.java       # Milvus V2数据访问
+│   └── CreateManualCollection.java  # 手动创建集合示例
 └── service/                         # 业务逻辑层
     └── VectorDataService.java      # 向量数据服务
 ```
@@ -163,14 +185,27 @@ src/main/java/com/beanmeat/milvus/
 
 ```yaml
 milvus:
-  host: localhost          # Milvus服务器地址
-  port: 19530              # Milvus服务器端口
-  database: default        # 数据库名称
+  uri: http://134.175.83.172          # Milvus服务器URI
   collection:
-    name: beanmeat_vectors # 集合名称
+    name: beanmeat_test               # 集合名称
     description: Beanmeat向量数据集合
-    dimension: 1024        # 向量维度
-    metric-type: COSINE    # 距离度量类型
+    consistency-level: STRONG         # 一致性级别
+    fields:                          # 字段配置
+      id:                            # ID字段
+        data-type: Int64
+        is-primary-key: true
+        max-length: 64
+      description:                   # 描述字段
+        data-type: VarChar
+        max-length: 1024
+      segment:                       # 段落字段
+        data-type: Int64
+        max-length: 64
+      description_vector:            # 向量字段
+        data-type: FloatVector
+        dimension: 1024
+        index-type: FLAT
+        metric-type: COSINE
 ```
 
 ### Swagger配置
@@ -189,9 +224,11 @@ springdoc:
 
 1. **向量维度**: 默认配置为1024维，可根据实际需求调整
 2. **距离度量**: 使用COSINE相似度，适合文本向量
-3. **索引类型**: 使用IVF_FLAT索引，平衡性能和精度
-4. **分页查询**: 支持offset和limit参数
-5. **异常处理**: 全局异常处理器统一处理错误
+3. **索引类型**: 使用FLAT索引，适合小规模数据
+4. **主键类型**: 使用Int64类型，支持时间戳生成
+5. **分页查询**: 支持offset和limit参数
+6. **异常处理**: 全局异常处理器统一处理错误
+7. **配置管理**: 所有常量都提取到配置文件中
 
 ## 许可证
 

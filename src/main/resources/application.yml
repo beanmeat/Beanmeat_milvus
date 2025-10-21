@@ -1,13 +1,26 @@
 # Milvus配置
 milvus:
-  host: localhost
-  port: 19530
-  database: default
+  uri: http://134.175.83.172
   collection:
-    name: beanmeat_vectors
+    name: beanmeat_test
     description: Beanmeat向量数据集合
-    dimension: 1024
-    metric-type: COSINE
+    consistency-level: STRONG
+    fields:
+      id:
+        data-type: Int64
+        is-primary-key: true
+        max-length: 64
+      description:
+        data-type: VarChar
+        max-length: 1024
+      segment:
+        data-type: Int64
+        max-length: 64
+      description_vector:
+        data-type: FloatVector
+        dimension: 1024
+        index-type: FLAT
+        metric-type: COSINE
 
 # 应用配置
 server:

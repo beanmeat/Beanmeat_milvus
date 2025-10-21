@@ -23,19 +23,11 @@ import java.util.List;
 public class VectorSearchRequest {
     
     @NotNull(message = "查询向量不能为空")
-    @Schema(description = "查询向量", example = "[0.1, 0.2, 0.3, ...]")
-    private List<Float> queryVector;
+    @Schema(description = "查询向量")
+    private String queryText;
     
     @Min(value = 1, message = "返回数量必须大于0")
     @Max(value = 100, message = "返回数量不能超过100")
     @Schema(description = "返回结果数量", example = "10")
     private Integer topK = 10;
-    
-    @Min(value = 0, message = "相似度阈值不能小于0")
-    @Max(value = 1, message = "相似度阈值不能大于1")
-    @Schema(description = "相似度阈值", example = "0.7")
-    private Double threshold = 0.7;
-    
-    @Schema(description = "过滤条件", example = "metadata.category == 'example'")
-    private String filter;
 }

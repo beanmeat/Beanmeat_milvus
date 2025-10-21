@@ -1,7 +1,7 @@
 package com.beanmeat.milvus.config;
 
-import io.milvus.client.MilvusServiceClient;
-import io.milvus.param.ConnectParam;
+import io.milvus.v2.client.ConnectConfig;
+import io.milvus.v2.client.MilvusClientV2;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;
@@ -18,26 +18,22 @@ public class MilvusConfig {
     private final MilvusProperties milvusProperties;
     
     /**
-     * 创建Milvus客户端Bean
+     * 创建Milvus V2客户端Bean
      */
     @Bean
-    public MilvusServiceClient milvusClient() {
+    public MilvusClientV2 milvusClient() {
         try {
-            ConnectParam connectParam = ConnectParam.newBuilder()
-                    .withHost(milvusProperties.getHost())
-                    .withPort(milvusProperties.getPort())
-                    .withDatabaseName(milvusProperties.getDatabase())
+            ConnectConfig config = ConnectConfig.builder()
+                    .uri(milvusProperties.getUri())
                     .build();
             
-            MilvusServiceClient milvusClient = new MilvusServiceClient(connectParam);
+            MilvusClientV2 milvusClient = new MilvusClientV2(config);
             
-            log.info("Milvus客户端连接成功: {}:{}", 
-                    milvusProperties.getHost(), 
-                    milvusProperties.getPort());
+            log.info("Milvus V2客户端连接成功: {}", milvusProperties.getUri());
             
             return milvusClient;
         } catch (Exception e) {
-            log.error("Milvus客户端连接失败", e);
+            log.error("Milvus V2客户端连接失败", e);
             throw new RuntimeException("无法连接到Milvus服务器", e);
         }
     }
