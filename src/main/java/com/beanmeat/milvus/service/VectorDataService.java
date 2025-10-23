@@ -178,7 +178,8 @@ public class VectorDataService {
         try {
             List<JSONObject> searchResults = milvusRepository.search(
                     request.getQueryText(),
-                    request.getTopK()
+                    request.getTopK(),
+                    request.getSegment()
             );
             return searchResults;
         } catch (Exception e) {

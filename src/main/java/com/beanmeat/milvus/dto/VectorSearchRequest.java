@@ -30,4 +30,7 @@ public class VectorSearchRequest {
     @Max(value = 100, message = "返回数量不能超过100")
     @Schema(description = "返回结果数量", example = "10")
     private Integer topK = 10;
+
+    @Schema(description = "段")
+    private Integer segment;
 }

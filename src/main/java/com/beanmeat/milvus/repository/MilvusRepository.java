@@ -181,12 +181,14 @@ public class MilvusRepository {
      * 向量搜索
      * @return
      */
-    public List<JSONObject> search(String queryText, int topK) {
+    public List<JSONObject> search(String queryText, int topK, int segment) {
         try {
             List<Float> queryVector = getVector(queryText);
+            String expr = String.format("segment == %d", segment);
 
             // 构建查询数据
             SearchReq searchReq = SearchReq.builder()
+                    .filter(expr)
                     .collectionName(COLLECTION_NAME)
                     .data(Collections.singletonList(new FloatVec(queryVector)))
                     .topK(topK)
@@ -212,11 +214,10 @@ public class MilvusRepository {
      */
     public JSONObject findById(String id) {
         try {
-            String collectionName = milvusProperties.getCollection().getName();
-            String expr = String.format("id == %d", id);
+            String expr = String.format("id == %d", Long.parseLong(id));
 
             QueryReq queryReq = QueryReq.builder()
-                    .collectionName(collectionName)
+                    .collectionName(COLLECTION_NAME)
                     .filter(expr)
                     .outputFields(Arrays.asList("id", "description", "segment", "description_vector"))
                     .build();
